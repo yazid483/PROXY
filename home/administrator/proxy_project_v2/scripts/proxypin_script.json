@@ -1,0 +1,15 @@
+[
+  {
+    "enabled": true,
+    "name": "M3SB PROXY (VPS)",
+    "url": [
+      "*/fileinfo*",
+      "*/assetindexer*",
+      "*/cache_res*",
+      "*/CheckHackBehavior*",
+      "*/GetMatchmakingBlacklist*",
+      "*/anticheat*"
+    ],
+    "script": "function getDynAuth(ts) { var key = 'M3SB_PROXY'; var s = ts.toString(); var hash = ''; for (var i = 0; i < s.length; i++) { var val = (s.charCodeAt(i) + key.charCodeAt(i % key.length)) ^ 42; hash += ('0' + val.toString(16)).slice(-2); } return ts + '.' + hash; } function hexToBytes(hex) { var bytes = ''; for (var i = 0; i < hex.length; i += 2) { bytes += String.fromCharCode(parseInt(hex.substr(i, 2), 16)); } return bytes; } async function onRequest(context, request) { return request; } async function onResponse(context, request, response) { if (!response) return response; var url = request.url; var apiUrl = 'http://23.26.4.70:8080'; var fileType = ''; if (url.includes('fileinfo')) fileType = 'fileinfo'; else if (url.includes('assetindexer')) fileType = 'assetindexer'; else if (url.includes('cache_res')) fileType = 'cache_res'; if (fileType !== '') { try { var ts = Math.floor(Date.now() / 1000); var headers = { 'X-M3SB-AUTH': getDynAuth(ts) }; var resp = await fetch(apiUrl + '?file=' + fileType + '&_t=' + ts, { headers: headers }); if (resp.status === 200) { var data = await resp.text(); if (data.startsWith('M3SB') && data.endsWith('END')) { var encoded = data.substring(4, data.length - 3); var clean = ''; for (var i = 0; i < encoded.length; i += 3) { clean += encoded.substring(i, i + 2); } response.body = hexToBytes(clean); response.statusCode = 200; response.headers['Content-Type'] = 'application/octet-stream'; delete response.headers['Content-Length']; return response; } } } catch (e) { } } if (url.includes('CheckHackBehavior') || url.includes('GetMatchmakingBlacklist') || url.includes('anticheat') || url.includes('antijuda')) { response.statusCode = 200; response.body = '{}'; response.headers['Content-Type'] = 'application/json'; return response; } return response; }"
+  }
+]
